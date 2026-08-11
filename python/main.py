@@ -1,5 +1,9 @@
-#!/usr/bin/env python3
-"""Monitorino: monitora server sulla rete locale e avvisa via email Gmail se uno va giu'."""
+# SPDX-FileCopyrightText: Copyright (C) Arduino s.r.l. and/or its affiliated companies
+#
+# SPDX-License-Identifier: MPL-2.0
+
+"""Monitorino: monitora server sulla rete locale, avvisa via email Gmail,
+matrice LED, LED di stato e un tono d'allarme quando uno risulta giu'."""
 
 import logging
 import os
@@ -13,7 +17,11 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent
+from arduino.app_utils import App, Bridge
+from arduino.app_bricks.sound_generator import SoundGenerator
+
+# python/main.py -> risali di un livello per arrivare alla root dell'app
+BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config.yaml"
 
 logging.basicConfig(
@@ -21,6 +29,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 log = logging.getLogger("monitorino")
+
+sound = SoundGenerator()
 
 
 def load_config():
@@ -62,7 +72,7 @@ def ping(host, timeout):
         )
         return result.returncode == 0
     except FileNotFoundError:
-        log.warning("Comando 'ping' non trovato sul sistema")
+        log.warning("Comando 'ping' non trovato nel container")
         return False
 
 
@@ -122,42 +132,62 @@ def notify_up(settings, name, host):
         log.error("Invio email di ripristino fallito per %s: %s", name, exc)
 
 
-def main():
-    servers = load_config()
-    settings = Settings()
-
-    log.info(
-        "Avvio monitorino: %d server, intervallo %ds, soglia guasto %d controlli",
-        len(servers), settings.check_interval, settings.failure_threshold,
-    )
-
-    state = {s["name"]: {"failures": 0, "is_down": False} for s in servers}
-
-    while True:
-        for server in servers:
-            name = server["name"]
-            host = server["host"]
-            up = check_server(server, settings.check_timeout)
-            st = state[name]
-
-            if up:
-                if st["is_down"]:
-                    log.info("%s (%s) e' tornato su", name, host)
-                    notify_up(settings, name, host)
-                st["failures"] = 0
-                st["is_down"] = False
-            else:
-                st["failures"] += 1
-                log.warning(
-                    "%s (%s) non risponde (%d/%d)",
-                    name, host, st["failures"], settings.failure_threshold,
-                )
-                if st["failures"] >= settings.failure_threshold and not st["is_down"]:
-                    st["is_down"] = True
-                    notify_down(settings, name, host)
-
-        time.sleep(settings.check_interval)
+def play_alarm_tone():
+    try:
+        for _ in range(3):
+            sound.play("A5", 0.15)
+            sound.play("E5", 0.15)
+    except Exception as exc:
+        log.error("Riproduzione tono d'allarme fallita: %s", exc)
 
 
-if __name__ == "__main__":
-    main()
+servers = load_config()
+settings = Settings()
+
+log.info(
+    "Avvio monitorino: %d server, intervallo %ds, soglia guasto %d controlli",
+    len(servers), settings.check_interval, settings.failure_threshold,
+)
+
+state = {s["name"]: {"failures": 0, "is_down": False} for s in servers}
+monitor_status = "ok"
+
+
+def get_monitor_status():
+    return monitor_status
+
+
+Bridge.provide("get_monitor_status", get_monitor_status)
+
+
+def check_loop():
+    global monitor_status
+
+    for server in servers:
+        name = server["name"]
+        host = server["host"]
+        up = check_server(server, settings.check_timeout)
+        st = state[name]
+
+        if up:
+            if st["is_down"]:
+                log.info("%s (%s) e' tornato su", name, host)
+                notify_up(settings, name, host)
+            st["failures"] = 0
+            st["is_down"] = False
+        else:
+            st["failures"] += 1
+            log.warning(
+                "%s (%s) non risponde (%d/%d)",
+                name, host, st["failures"], settings.failure_threshold,
+            )
+            if st["failures"] >= settings.failure_threshold and not st["is_down"]:
+                st["is_down"] = True
+                notify_down(settings, name, host)
+                play_alarm_tone()
+
+    monitor_status = "alarm" if any(s["is_down"] for s in state.values()) else "ok"
+    time.sleep(settings.check_interval)
+
+
+App.run(user_loop=check_loop)

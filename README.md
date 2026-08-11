@@ -1,16 +1,23 @@
 # monitorino
 
-Piccolo script Python che monitora alcuni server sulla rete locale (ping +
-porta TCP opzionale) e invia una email tramite Gmail quando un server risulta
-irraggiungibile (e quando torna su).
+App per Arduino UNO Q che monitora alcuni server sulla rete locale (ping +
+porta TCP opzionale) e segnala eventuali problemi in quattro modi:
+
+- **email** via Gmail (allarme alla caduta, avviso al ripristino)
+- **matrice LED 8x13**: segno di spunta se tutto ok, X se almeno un server e' giu'
+- **LED di stato** (LED3/LED4 sull'MCU): verde fisso se tutto ok, rosso
+  lampeggiante durante un allarme
+- **tono d'allarme** riprodotto sullo speaker al momento della caduta
+
+## Architettura
+
+- `python/main.py` (MPU/Linux): esegue i controlli sui server, invia le
+  email, riproduce il tono d'allarme e pubblica lo stato ("ok"/"alarm") sul
+  Bridge.
+- `sketch/sketch.ino` (MCU): interroga periodicamente lo stato via
+  `Bridge.call("get_monitor_status")` e aggiorna matrice LED e LED di stato.
 
 ## Setup
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
 
 1. Modifica `config.yaml` con l'elenco dei tuoi server (`name`, `host`, `port`
    opzionale).
@@ -27,33 +34,15 @@ pip install -r requirements.txt
 ## Uso
 
 ```bash
-python3 monitor.py
+arduino-app-cli app start ~/ArduinoApps/monitorino
+arduino-app-cli app logs  ~/ArduinoApps/monitorino --follow
+arduino-app-cli monitor                                       # log seriali MCU
 ```
 
-Lo script gira in loop continuo, ricontrollando tutti i server ogni
-`CHECK_INTERVAL_SECONDS` secondi. Un server viene considerato "giu'" solo dopo
-`FAILURE_THRESHOLD` controlli falliti consecutivi (per evitare falsi allarmi),
-e viene inviata una email sia alla caduta sia al ripristino.
+**Attenzione:** solo un'App alla volta puo' girare sulla board — `app start`
+ferma automaticamente quella attualmente in esecuzione.
 
-## Esecuzione persistente (systemd)
-
-Il repo include `monitorino.service`. Per installarlo come servizio che parte
-al boot e si riavvia in caso di crash:
-
-```bash
-sudo cp monitorino.service /etc/systemd/system/monitorino.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now monitorino.service
-```
-
-Comandi utili:
-
-```bash
-sudo systemctl status monitorino.service
-journalctl -u monitorino.service -f
-sudo systemctl restart monitorino.service
-```
-
-Il servizio esegue `monitor.py` come utente `arduino` dalla directory del
-repo, e legge `.env` da li' — assicurati che `.env` sia gia' compilato prima
-di avviarlo.
+Un server viene considerato "giu'" solo dopo `FAILURE_THRESHOLD` controlli
+falliti consecutivi (per evitare falsi allarmi). Alla transizione a "giu'"
+vengono attivati email, tono d'allarme e stato "alarm" su matrice/LED; al
+ripristino tutto torna allo stato "ok" ed e' inviata un'email di conferma.
