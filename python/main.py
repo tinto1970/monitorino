@@ -9,7 +9,6 @@ import logging
 import os
 import smtplib
 import socket
-import subprocess
 import time
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -60,19 +59,6 @@ class Settings:
         return value
 
 
-def ping(host, timeout):
-    try:
-        result = subprocess.run(
-            ["ping", "-c", "1", "-W", str(timeout), host],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        return result.returncode == 0
-    except FileNotFoundError:
-        log.warning("Comando 'ping' non trovato nel container")
-        return False
-
-
 def check_port(host, port, timeout):
     try:
         with socket.create_connection((host, port), timeout=timeout):
@@ -82,13 +68,12 @@ def check_port(host, port, timeout):
 
 
 def check_server(server, timeout):
+    # Il ping ICMP non e' disponibile dentro il container dell'App (nessun
+    # binario 'ping' ne' privilegi per raw socket), quindi la raggiungibilita'
+    # si verifica con una connessione TCP sulla porta indicata (default 80).
     host = server["host"]
-    if not ping(host, timeout):
-        return False
-    port = server.get("port")
-    if port and not check_port(host, port, timeout):
-        return False
-    return True
+    port = server.get("port", 80)
+    return check_port(host, port, timeout)
 
 
 def send_email(settings, subject, body):

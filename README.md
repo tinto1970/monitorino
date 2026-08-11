@@ -1,7 +1,7 @@
 # monitorino
 
-App per Arduino UNO Q che monitora alcuni server sulla rete locale (ping +
-porta TCP opzionale) e segnala eventuali problemi in tre modi:
+App per Arduino UNO Q che monitora alcuni server sulla rete locale (verifica
+di connessione TCP su una porta) e segnala eventuali problemi in tre modi:
 
 - **email** via Gmail (allarme alla caduta, avviso al ripristino)
 - **matrice LED 8x13**: segno di spunta se tutto ok, X se almeno un server e' giu'
@@ -23,7 +23,8 @@ gia' pronta).
 ## Setup
 
 1. Modifica `config.yaml` con l'elenco dei tuoi server (`name`, `host`, `port`
-   opzionale).
+   opzionale — default 80 se omessa; il ping ICMP non e' usato perche' non
+   disponibile dentro il container dell'App).
 2. Copia `.env.example` in `.env` e compilalo:
    - `GMAIL_USER`: il tuo indirizzo Gmail mittente.
    - `GMAIL_APP_PASSWORD`: una [App Password](https://myaccount.google.com/apppasswords)

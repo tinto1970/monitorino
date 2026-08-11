@@ -1,6 +1,9 @@
 # Elenco dei server da monitorare.
-# host: IP o hostname da pingare
-# port: (opzionale) porta TCP da verificare in aggiunta al ping
+# host: IP o hostname
+# port: (opzionale) porta TCP da verificare per stabilire la raggiungibilita'
+#       (default 80 se omessa). Il ping ICMP non e' usato: dentro il
+#       container dell'App non e' disponibile ne' il binario ne' i privilegi
+#       necessari, quindi si verifica una connessione TCP sulla porta.
 servers:
   - name: nuc1
     host: nuc1.station
