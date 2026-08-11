@@ -1,0 +1,21 @@
+# List of servers to monitor. Copy this file to "config.yaml" and edit it
+# with your own hosts (config.yaml is gitignored, so your local network
+# layout stays private).
+#
+# host: IP or hostname
+# port: (optional) TCP port checked to determine reachability
+#       (defaults to 80 if omitted). ICMP ping is not used: it's not
+#       available inside the App's container, so reachability is checked
+#       with a TCP connection on the port.
+servers:
+  - name: router
+    host: 192.168.1.1
+    port: 443
+
+  - name: nas
+    host: 192.168.1.10
+    port: 22
+
+  - name: web-server
+    host: 192.168.1.20
+    port: 80

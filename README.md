@@ -24,9 +24,10 @@ implementation).
 
 ## Setup
 
-1. Edit `config.yaml` with your list of servers (`name`, `host`, `port` —
-   optional, defaults to 80 if omitted; ICMP ping is not used because it's
-   not available inside the App's container).
+1. Copy `config.yaml.sample` to `config.yaml` and edit it with your own list
+   of servers (`name`, `host`, `port` — optional, defaults to 80 if omitted;
+   ICMP ping is not used because it's not available inside the App's
+   container).
 2. Copy `.env.example` to `.env` and fill it in:
    - `GMAIL_USER`: your sending Gmail address.
    - `GMAIL_APP_PASSWORD`: a Gmail [App Password](https://myaccount.google.com/apppasswords)
@@ -35,7 +36,8 @@ implementation).
    - `CHECK_INTERVAL_SECONDS`, `CHECK_TIMEOUT_SECONDS`, `FAILURE_THRESHOLD`:
      monitoring parameters (sensible defaults already set).
 
-`.env` must never be committed (it's already in `.gitignore`).
+`config.yaml` and `.env` must never be committed — both are already in
+`.gitignore` so your local network layout and credentials stay private.
 
 ## Usage
 
