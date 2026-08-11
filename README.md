@@ -54,3 +54,7 @@ A server is only considered "down" after `FAILURE_THRESHOLD` consecutive
 failed checks (to avoid false alarms). On the transition to "down", an email
 is sent and the matrix/LEDs switch to the "alarm" state; on recovery
 everything returns to the "ok" state and a confirmation email is sent.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
