@@ -2,13 +2,14 @@
 # host: IP o hostname da pingare
 # port: (opzionale) porta TCP da verificare in aggiunta al ping
 servers:
-  - name: Router
-    host: 192.168.1.1
+  - name: nuc1
+    host: nuc1.station
+    port: 443
 
-  - name: NAS
-    host: 192.168.1.10
-    port: 22
+  - name: nuc2
+    host: nuc2.station
+    port: 8006
 
-  - name: Server web
-    host: 192.168.1.20
-    port: 80
+  - name: nuc3
+    host: nuc3.station
+    port: 443
