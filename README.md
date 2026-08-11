@@ -1,19 +1,22 @@
 # monitorino
 
 App per Arduino UNO Q che monitora alcuni server sulla rete locale (ping +
-porta TCP opzionale) e segnala eventuali problemi in quattro modi:
+porta TCP opzionale) e segnala eventuali problemi in tre modi:
 
 - **email** via Gmail (allarme alla caduta, avviso al ripristino)
 - **matrice LED 8x13**: segno di spunta se tutto ok, X se almeno un server e' giu'
 - **LED di stato** (LED3/LED4 sull'MCU): verde fisso se tutto ok, rosso
   lampeggiante durante un allarme
-- **tono d'allarme** riprodotto sullo speaker al momento della caduta
+
+Un tono d'allarme via Brick `sound_generator` era previsto ma richiede uno
+speaker collegato alla board (jack, USB o HDMI) — non presente al momento;
+si puo' riaggiungere in futuro (vedi cronologia git per l'implementazione
+gia' pronta).
 
 ## Architettura
 
 - `python/main.py` (MPU/Linux): esegue i controlli sui server, invia le
-  email, riproduce il tono d'allarme e pubblica lo stato ("ok"/"alarm") sul
-  Bridge.
+  email e pubblica lo stato ("ok"/"alarm") sul Bridge.
 - `sketch/sketch.ino` (MCU): interroga periodicamente lo stato via
   `Bridge.call("get_monitor_status")` e aggiorna matrice LED e LED di stato.
 
@@ -44,5 +47,5 @@ ferma automaticamente quella attualmente in esecuzione.
 
 Un server viene considerato "giu'" solo dopo `FAILURE_THRESHOLD` controlli
 falliti consecutivi (per evitare falsi allarmi). Alla transizione a "giu'"
-vengono attivati email, tono d'allarme e stato "alarm" su matrice/LED; al
-ripristino tutto torna allo stato "ok" ed e' inviata un'email di conferma.
+vengono attivati email e stato "alarm" su matrice/LED; al ripristino tutto
+torna allo stato "ok" ed e' inviata un'email di conferma.

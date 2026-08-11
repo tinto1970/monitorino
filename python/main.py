@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 """Monitorino: monitora server sulla rete locale, avvisa via email Gmail,
-matrice LED, LED di stato e un tono d'allarme quando uno risulta giu'."""
+matrice LED e LED di stato quando uno risulta giu'."""
 
 import logging
 import os
@@ -18,7 +18,6 @@ import yaml
 from dotenv import load_dotenv
 
 from arduino.app_utils import App, Bridge
-from arduino.app_bricks.sound_generator import SoundGenerator
 
 # python/main.py -> risali di un livello per arrivare alla root dell'app
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,8 +28,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 log = logging.getLogger("monitorino")
-
-sound = SoundGenerator()
 
 
 def load_config():
@@ -132,15 +129,6 @@ def notify_up(settings, name, host):
         log.error("Invio email di ripristino fallito per %s: %s", name, exc)
 
 
-def play_alarm_tone():
-    try:
-        for _ in range(3):
-            sound.play("A5", 0.15)
-            sound.play("E5", 0.15)
-    except Exception as exc:
-        log.error("Riproduzione tono d'allarme fallita: %s", exc)
-
-
 servers = load_config()
 settings = Settings()
 
@@ -184,7 +172,6 @@ def check_loop():
             if st["failures"] >= settings.failure_threshold and not st["is_down"]:
                 st["is_down"] = True
                 notify_down(settings, name, host)
-                play_alarm_tone()
 
     monitor_status = "alarm" if any(s["is_down"] for s in state.values()) else "ok"
     time.sleep(settings.check_interval)

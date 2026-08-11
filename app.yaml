@@ -1,5 +1,4 @@
 name: Monitorino
 icon: 🚨
-description: Monitora i server della rete di casa e avvisa via email, matrice LED, LED di stato e tono d'allarme quando qualcosa e' giu'.
-bricks:
-  - arduino:sound_generator
+description: Monitora i server della rete di casa e avvisa via email, matrice LED e LED di stato quando qualcosa e' giu'.
+bricks: []
