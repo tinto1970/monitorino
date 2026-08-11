@@ -35,6 +35,25 @@ Lo script gira in loop continuo, ricontrollando tutti i server ogni
 `FAILURE_THRESHOLD` controlli falliti consecutivi (per evitare falsi allarmi),
 e viene inviata una email sia alla caduta sia al ripristino.
 
-Per farlo girare in background in modo persistente conviene creare un
-servizio `systemd` (non incluso in questo repo, da configurare secondo le
-proprie preferenze).
+## Esecuzione persistente (systemd)
+
+Il repo include `monitorino.service`. Per installarlo come servizio che parte
+al boot e si riavvia in caso di crash:
+
+```bash
+sudo cp monitorino.service /etc/systemd/system/monitorino.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now monitorino.service
+```
+
+Comandi utili:
+
+```bash
+sudo systemctl status monitorino.service
+journalctl -u monitorino.service -f
+sudo systemctl restart monitorino.service
+```
+
+Il servizio esegue `monitor.py` come utente `arduino` dalla directory del
+repo, e legge `.env` da li' — assicurati che `.env` sia gia' compilato prima
+di avviarlo.
