@@ -1,26 +1,32 @@
 # monitorino
 
 Arduino UNO Q app that monitors a few servers on the local network (TCP
-connection check on a port) and reports problems in three ways:
+connection check on a port) and reports problems in four ways:
 
 - **email** via Gmail (alert on failure, notice on recovery)
 - **8x13 LED matrix**: checkmark when everything is ok, X when at least one
   server is down
 - **status LEDs** (LED3/LED4 on the MCU): solid green when ok, blinking red
   during an alarm
+- **audio alarm** (optional): a short tone on a [Modulino Buzzer](https://docs.arduino.cc/hardware/modulino-buzzer/)
+  connected via Qwiic, played once when a server goes down. The buzzer is
+  entirely optional — if it's not connected, the sketch detects that at
+  boot and simply skips the sound; email, matrix and status LEDs work either
+  way.
 
-An audio alarm via the `sound_generator` Brick was planned but requires a
-speaker connected to the board (jack, USB, or HDMI) — not present at the
-moment; it can be added back later (see git history for the already-working
-implementation).
+An audio alarm via the `sound_generator` Brick was tried first but requires
+a speaker connected to the board's audio output — not available on a
+headless setup. The Modulino Buzzer works over I2C instead, so it doesn't
+have that requirement (see git history for the `sound_generator` version).
 
 ## Architecture
 
 - `python/main.py` (MPU/Linux): runs the server checks, sends the emails,
   and publishes the status ("ok"/"alarm") on the Bridge.
 - `sketch/sketch.ino` (MCU): periodically polls the status via
-  `Bridge.call("get_monitor_status")` and updates the LED matrix and status
-  LEDs.
+  `Bridge.call("get_monitor_status")`, updates the LED matrix and status
+  LEDs, and plays a tone on the Modulino Buzzer (if connected) on the
+  transition to "alarm".
 
 ## Setup
 
