@@ -53,6 +53,14 @@ class Settings:
             if h.strip()
         }
 
+        # The App's Docker container always runs on UTC regardless of the
+        # board's system timezone, so SUMMARY_HOURS is interpreted against
+        # TZ here (with automatic DST handling via the container's tzdata).
+        tz = os.environ.get("TZ", "Europe/Rome")
+        os.environ["TZ"] = tz
+        if hasattr(time, "tzset"):
+            time.tzset()
+
     @staticmethod
     def _require(name):
         value = os.environ.get(name)

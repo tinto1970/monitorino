@@ -42,9 +42,13 @@ have that requirement (see git history for the `sound_generator` version).
    - `GMAIL_TO`: notification recipient(s), comma-separated.
    - `CHECK_INTERVAL_SECONDS`, `CHECK_TIMEOUT_SECONDS`, `FAILURE_THRESHOLD`:
      monitoring parameters (sensible defaults already set).
-   - `SUMMARY_HOURS`: comma-separated hours (board local time, 0-23) at which
-     to send a daily summary email listing all monitored hosts and their
-     current status, regardless of alarms. Defaults to `8,20`.
+   - `SUMMARY_HOURS`: comma-separated hours (0-23) at which to send a daily
+     summary email listing all monitored hosts and their current status,
+     regardless of alarms. Defaults to `8,20`.
+   - `TZ`: timezone used to interpret `SUMMARY_HOURS` (e.g. `Europe/Rome`,
+     with automatic DST handling). The App's Docker container always runs on
+     UTC regardless of the board's own system timezone, so this is set
+     independently. Defaults to `Europe/Rome`.
 
 `config.yaml` and `.env` must never be committed — both are already in
 `.gitignore` so your local network layout and credentials stay private.
