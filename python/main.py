@@ -47,6 +47,11 @@ class Settings:
         self.check_interval = int(os.environ.get("CHECK_INTERVAL_SECONDS", "60"))
         self.check_timeout = int(os.environ.get("CHECK_TIMEOUT_SECONDS", "3"))
         self.failure_threshold = int(os.environ.get("FAILURE_THRESHOLD", "3"))
+        self.summary_hours = {
+            int(h.strip())
+            for h in os.environ.get("SUMMARY_HOURS", "8,20").split(",")
+            if h.strip()
+        }
 
     @staticmethod
     def _require(name):
@@ -114,6 +119,30 @@ def notify_up(settings, name, host):
         log.error("Invio email di ripristino fallito per %s: %s", name, exc)
 
 
+def build_summary_body(servers, state):
+    lines = ["Riepilogo dello stato dei server monitorati:", ""]
+    for server in servers:
+        name = server["name"]
+        host = server["host"]
+        port = server.get("port", 80)
+        status = "DOWN" if state[name]["is_down"] else "OK"
+        lines.append(f"- {name} ({host}:{port}): {status}")
+    return "\n".join(lines)
+
+
+def notify_summary(settings, servers, state):
+    all_ok = all(not s["is_down"] for s in state.values())
+    subject = (
+        "[monitorino] Riepilogo: tutti gli host sono OK"
+        if all_ok
+        else "[monitorino] Riepilogo: alcuni host in allarme"
+    )
+    try:
+        send_email(settings, subject=subject, body=build_summary_body(servers, state))
+    except smtplib.SMTPException as exc:
+        log.error("Invio email di riepilogo fallito: %s", exc)
+
+
 servers = load_config()
 settings = Settings()
 
@@ -124,6 +153,7 @@ log.info(
 
 state = {s["name"]: {"failures": 0, "is_down": False} for s in servers}
 monitor_status = "ok"
+last_summary_date = {}
 
 
 def get_monitor_status():
@@ -159,6 +189,14 @@ def check_loop():
                 notify_down(settings, name, host)
 
     monitor_status = "alarm" if any(s["is_down"] for s in state.values()) else "ok"
+
+    now = time.localtime()
+    if now.tm_hour in settings.summary_hours:
+        today = (now.tm_year, now.tm_yday)
+        if last_summary_date.get(now.tm_hour) != today:
+            notify_summary(settings, servers, state)
+            last_summary_date[now.tm_hour] = today
+
     time.sleep(settings.check_interval)
 
 

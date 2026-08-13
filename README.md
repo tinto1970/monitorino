@@ -3,7 +3,8 @@
 Arduino UNO Q app that monitors a few servers on the local network (TCP
 connection check on a port) and reports problems in four ways:
 
-- **email** via Gmail (alert on failure, notice on recovery)
+- **email** via Gmail (alert on failure, notice on recovery, plus a daily
+  summary at configurable hours listing every monitored host and its status)
 - **8x13 LED matrix**: checkmark when everything is ok, X when at least one
   server is down
 - **status LEDs** (LED3/LED4 on the MCU): solid green when ok, blinking red
@@ -41,6 +42,9 @@ have that requirement (see git history for the `sound_generator` version).
    - `GMAIL_TO`: notification recipient(s), comma-separated.
    - `CHECK_INTERVAL_SECONDS`, `CHECK_TIMEOUT_SECONDS`, `FAILURE_THRESHOLD`:
      monitoring parameters (sensible defaults already set).
+   - `SUMMARY_HOURS`: comma-separated hours (board local time, 0-23) at which
+     to send a daily summary email listing all monitored hosts and their
+     current status, regardless of alarms. Defaults to `8,20`.
 
 `config.yaml` and `.env` must never be committed — both are already in
 `.gitignore` so your local network layout and credentials stay private.
