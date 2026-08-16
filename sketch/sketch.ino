@@ -12,17 +12,33 @@ Arduino_LED_Matrix matrix;
 ModulinoBuzzer buzzer;
 bool buzzerReady = false;
 
+// Called from Python (via Bridge.notify) once per day at each configured
+// SUMMARY_HOURS slot, only while the alarm is still active.
 void playAlarmTone() {
   if (!buzzerReady) {
     return;
   }
-  buzzer.tone(880, 150);
-  delay(200);
-  buzzer.tone(659, 150);
-  delay(200);
-  buzzer.tone(880, 150);
-  delay(200);
-  buzzer.noTone();
+  // 440Hz rather than a lower pitch: this is a passive piezo buzzer, which
+  // is much quieter below ~1kHz (resonance is around 2-4kHz), so a truly
+  // "low" tone would barely be audible.
+  buzzer.tone(440, 3000);  // 3s; the module times it, so this call is non-blocking
+}
+
+// Called from Python (via Bridge.notify) once, right when the alarm clears.
+void playRecoveryTone() {
+  if (!buzzerReady) {
+    return;
+  }
+  buzzer.tone(523, 600);  // C5
+  delay(650);
+  buzzer.tone(659, 600);  // E5
+  delay(650);
+  buzzer.tone(784, 700);  // G5, ~2s total, last note rings out in the background
+}
+
+// Queried by Python (via Bridge.call) to log whether the buzzer was found.
+bool getBuzzerStatus() {
+  return buzzerReady;
 }
 
 void setup() {
@@ -43,17 +59,20 @@ void setup() {
   analogWrite(LED3_B, 0);
 
   // Modulino Buzzer is optional: if it's not physically connected via
-  // Qwiic, begin() returns false and playAlarmTone() becomes a no-op.
+  // Qwiic, begin() returns false and playAlarmTone()/playRecoveryTone()
+  // become no-ops.
   Modulino.begin();
   buzzerReady = buzzer.begin();
-  Serial.println(buzzerReady ? "Modulino Buzzer found" : "Modulino Buzzer not found, audio alarm disabled");
 
   Bridge.begin();
+  Bridge.provide("play_alarm_tone", playAlarmTone);
+  Bridge.provide("play_recovery_tone", playRecoveryTone);
+  Bridge.provide("get_buzzer_status", getBuzzerStatus);
+  Serial.println(buzzerReady ? "Modulino Buzzer found" : "Modulino Buzzer not found, audio alarm disabled");
 }
 
 void loop() {
   static bool blinkOn = false;
-  static bool wasAlarm = false;
 
   String status;
   bool ok = Bridge.call("get_monitor_status").result(status);
@@ -67,10 +86,6 @@ void loop() {
 
     blinkOn = !blinkOn;
     digitalWrite(LED4_R, blinkOn ? LOW : HIGH);
-
-    if (!wasAlarm) {
-      playAlarmTone();  // beep once, right when the alarm starts
-    }
   } else {
     matrix.draw(ok_icon);
     analogWrite(LED3_R, 0);
@@ -79,6 +94,5 @@ void loop() {
     digitalWrite(LED4_R, HIGH);
   }
 
-  wasAlarm = alarm;
   delay(500);
 }

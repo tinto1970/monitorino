@@ -9,11 +9,13 @@ connection check on a port) and reports problems in four ways:
   server is down
 - **status LEDs** (LED3/LED4 on the MCU): solid green when ok, blinking red
   during an alarm
-- **audio alarm** (optional): a short tone on a [Modulino Buzzer](https://docs.arduino.cc/hardware/modulino-buzzer/)
-  connected via Qwiic, played once when a server goes down. The buzzer is
-  entirely optional — if it's not connected, the sketch detects that at
-  boot and simply skips the sound; email, matrix and status LEDs work either
-  way.
+- **audio alarm** (optional): a [Modulino Buzzer](https://docs.arduino.cc/hardware/modulino-buzzer/)
+  connected via Qwiic. While an alarm is active, a low 3-second tone plays at
+  each `SUMMARY_HOURS` slot (same schedule as the summary email) as a daily
+  reminder, until the alarm clears; on recovery, a cheerful 2-second tone
+  plays once. The buzzer is entirely optional — if it's not connected, the
+  sketch detects that at boot and simply skips the sound; email, matrix and
+  status LEDs work either way.
 
 An audio alarm via the `sound_generator` Brick was tried first but requires
 a speaker connected to the board's audio output — not available on a

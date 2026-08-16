@@ -161,7 +161,9 @@ log.info(
 
 state = {s["name"]: {"failures": 0, "is_down": False} for s in servers}
 monitor_status = "ok"
+previous_monitor_status = "ok"
 last_summary_date = {}
+last_alarm_tone_date = {}
 
 
 def get_monitor_status():
@@ -170,9 +172,27 @@ def get_monitor_status():
 
 Bridge.provide("get_monitor_status", get_monitor_status)
 
+buzzer_checked = False
+
+
+def check_buzzer_status():
+    global buzzer_checked
+    buzzer_checked = True
+    try:
+        ready = Bridge.call("get_buzzer_status")
+        if ready:
+            log.info("Modulino Buzzer rilevato: allarme sonoro attivo")
+        else:
+            log.info("Modulino Buzzer non rilevato: allarme sonoro disabilitato")
+    except (ValueError, TimeoutError) as exc:
+        log.warning("Impossibile determinare lo stato del Modulino Buzzer: %s", exc)
+
 
 def check_loop():
-    global monitor_status
+    global monitor_status, previous_monitor_status
+
+    if not buzzer_checked:
+        check_buzzer_status()
 
     for server in servers:
         name = server["name"]
@@ -198,12 +218,19 @@ def check_loop():
 
     monitor_status = "alarm" if any(s["is_down"] for s in state.values()) else "ok"
 
+    if previous_monitor_status == "alarm" and monitor_status == "ok":
+        Bridge.notify("play_recovery_tone")
+    previous_monitor_status = monitor_status
+
     now = time.localtime()
     if now.tm_hour in settings.summary_hours:
         today = (now.tm_year, now.tm_yday)
         if last_summary_date.get(now.tm_hour) != today:
             notify_summary(settings, servers, state)
             last_summary_date[now.tm_hour] = today
+        if monitor_status == "alarm" and last_alarm_tone_date.get(now.tm_hour) != today:
+            Bridge.notify("play_alarm_tone")
+            last_alarm_tone_date[now.tm_hour] = today
 
     time.sleep(settings.check_interval)
 
