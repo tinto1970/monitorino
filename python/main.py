@@ -164,13 +164,20 @@ monitor_status = "ok"
 previous_monitor_status = "ok"
 last_summary_date = {}
 last_alarm_tone_date = {}
+ok_count = len(servers)
+ko_count = 0
 
 
 def get_monitor_status():
     return monitor_status
 
 
+def get_host_counts():
+    return f"{ok_count},{ko_count}"
+
+
 Bridge.provide("get_monitor_status", get_monitor_status)
+Bridge.provide("get_host_counts", get_host_counts)
 
 buzzer_checked = False
 
@@ -189,7 +196,7 @@ def check_buzzer_status():
 
 
 def check_loop():
-    global monitor_status, previous_monitor_status
+    global monitor_status, previous_monitor_status, ok_count, ko_count
 
     if not buzzer_checked:
         check_buzzer_status()
@@ -217,6 +224,8 @@ def check_loop():
                 notify_down(settings, name, host)
 
     monitor_status = "alarm" if any(s["is_down"] for s in state.values()) else "ok"
+    ko_count = sum(1 for s in state.values() if s["is_down"])
+    ok_count = len(state) - ko_count
 
     if previous_monitor_status == "alarm" and monitor_status == "ok":
         Bridge.notify("play_recovery_tone")

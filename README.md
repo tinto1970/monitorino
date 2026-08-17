@@ -5,8 +5,9 @@ connection check on a port) and reports problems in four ways:
 
 - **email** via Gmail (alert on failure, notice on recovery, plus a daily
   summary at configurable hours listing every monitored host and its status)
-- **8x13 LED matrix**: checkmark when everything is ok, X when at least one
-  server is down
+- **8x13 LED matrix**: alternates every 1.5s between `OK<n>` and `KO<n>`,
+  showing the current count of reachable and unreachable hosts (the display
+  is too small to fit both counts on screen at once)
 - **status LEDs** (LED3/LED4 on the MCU): solid green when ok, blinking red
   during an alarm
 - **audio alarm** (optional): a [Modulino Buzzer](https://docs.arduino.cc/hardware/modulino-buzzer/)
