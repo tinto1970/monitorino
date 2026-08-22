@@ -227,7 +227,9 @@ def check_loop():
     ko_count = sum(1 for s in state.values() if s["is_down"])
     ok_count = len(state) - ko_count
 
-    if previous_monitor_status == "alarm" and monitor_status == "ok":
+    if previous_monitor_status == "ok" and monitor_status == "alarm":
+        Bridge.notify("play_alarm_tone")
+    elif previous_monitor_status == "alarm" and monitor_status == "ok":
         Bridge.notify("play_recovery_tone")
     previous_monitor_status = monitor_status
 
